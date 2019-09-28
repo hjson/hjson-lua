@@ -117,7 +117,7 @@ function HjsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
     if indent == nil then
         indent = "    "
     end
-    if (type(indent) ~= "number" or indent < 2) and (type(indent) ~= "string" or not indent:find("%s%s+")) then
+    if (type(indent) ~= "number" or indent < 2) and (type(indent) ~= "string" or not indent:find("%s%s*")) then
         error("indent (#1 parameter) has to be of type string with at least 2 spaces or integer greater than 1")
     end
     if type(indent) == "number" then
@@ -289,7 +289,7 @@ function HjsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
         end
         local func = encodeFunctionMap[_type]
         if type(func) == "function" then
-            return func(o, encode)
+            return func(o, _encode)
         end
         error("Unexpected type '" .. _type .. "'")
     end

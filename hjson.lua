@@ -8,28 +8,28 @@ local _decoder
 local _encoder
 local _encoderH
 
-function decode(str) 
-    if not _decoder then 
-        _decoder = decoder:new()
-    end
+local function decode(str, strict, object_hook, object_pairs_hook) 
+    _decoder = decoder:new(strict, object_hook, object_pairs_hoo)
     return _decoder:decode(str)
 end
 
-function encode_json(str) 
-    if not _encoder then 
-        _encoder = encoder:new()
-    end
-    return _encoder:encode(str)
+local function encode_json(obj, indent, skipkeys) 
+    _encoder = encoder:new(indent, skipkeys)
+    return _encoder:encode(obj)
 end
 
-function encode(str) 
+local function encode(obj, indent, skipkeys) 
+    forward = false
+    if indent == "" or indent == false or indent == 0 then 
+        return encode_json(obj, indent, skipkeys) 
+    end
     if not _encoderH then 
         _encoderH = encoderH:new()
     end
-    return _encoderH:encode(str)
+    return _encoderH:encode(obj)
 end
 
-hjson = {
+local hjson = {
     encode = encode,
     stringify = encode,
     encode_to_json = encode_json,

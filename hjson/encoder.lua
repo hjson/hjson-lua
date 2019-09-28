@@ -57,6 +57,10 @@ function JsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
     indent = string.rep(" ", indent)
   end
 
+  if type(indent) == "boolean" and indent then 
+    indent = "    "
+  end
+
   if indent and not indent:match("%s*") then
     error("Indent has to contain only whitespace characters or be a number")
   end
