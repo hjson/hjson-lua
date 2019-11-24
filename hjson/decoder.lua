@@ -197,7 +197,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 end
                 _end = _end + 5
                 if esc:find("^[dD][89aAbB]") and s:sub(_end, _end + 1) == "\\u" then
-                    esc2 = s:sub(_end + 2, _end + 6)
+                    local esc2 = s:sub(_end + 2, _end + 6)
                     local n1 = tonumber(esc, 16)
                     local n2 = tonumber(esc2, 16)
                     chars = codepointToUtf8((n1 - 0xd800) * 0x400 + (n2 - 0xdc00) + 0x10000, s, _end)

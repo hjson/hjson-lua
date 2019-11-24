@@ -1,5 +1,4 @@
 -- MIT License - Copyright (c) 2019 Void (cryon.io)
-
 package.path = package.path .. ";./hjson/?.lua"
 
 json = require("test.json")
