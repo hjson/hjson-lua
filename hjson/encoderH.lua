@@ -110,7 +110,17 @@ end
 
 local HjsonEncoder = {}
 
-function HjsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
+function HjsonEncoder:new(options)
+    if type(options) ~= "table" then
+        options = {}
+    end
+    local indent, skipkeys, sort_keys, item_sort_key, invalidObjectsAsType =
+        options.indent,
+        options.skipkeys,
+        options.sort_keys,
+        options.item_sort_key,
+        options.invalidObjectsAsType
+
     if skipkeys == nil then
         skipkeys = true
     end
@@ -291,12 +301,10 @@ function HjsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
         if type(func) == "function" then
             return func(o, _encode)
         end
+        if invalidObjectsAsType then
+            return encodeFunctionMap["string"]('__lua_' ..type(o))
+        end
         error("Unexpected type '" .. _type .. "'")
-    end
-
-    local function json_encode(o)
-        stack = {}
-        return _encode(o)
     end
 
     local je = {

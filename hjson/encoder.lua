@@ -43,7 +43,17 @@ end
 
 local JsonEncoder = {}
 
-function JsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
+function JsonEncoder:new(options)
+  if type(options) ~= "table" then
+    options = {}
+  end
+  local indent, skipkeys, sort_keys, item_sort_key, invalidObjectsAsType =
+    options.indent,
+    options.skipkeys,
+    options.sort_keys,
+    options.item_sort_key,
+    options.invalidObjectsAsType
+
   if skipkeys == nil then
     skipkeys = true
   end
@@ -57,7 +67,7 @@ function JsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
     indent = string.rep(" ", indent)
   end
 
-  if type(indent) == "boolean" and indent then 
+  if type(indent) == "boolean" and indent then
     indent = "    "
   end
 
@@ -195,12 +205,10 @@ function JsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
     if type(func) == "function" then
       return func(o, encode)
     end
+    if invalidObjectsAsType then
+      return encodeFunctionMap["string"]('__lua_' ..type(o))
+    end
     error("Unexpected type '" .. _type .. "'")
-  end
-
-  local function json_encode(o)
-    stack = {}
-    return encode(o)
   end
 
   local je = {
@@ -212,8 +220,8 @@ function JsonEncoder:new(indent, skipkeys, sort_keys, item_sort_key)
   return je
 end
 
-function JsonEncoder:encode(o)
-  return self._encode(o)
+function JsonEncoder:encode(o, allowNonJsonTypes)
+  return self._encode(o, allowNonJsonTypes)
 end
 
 return JsonEncoder
