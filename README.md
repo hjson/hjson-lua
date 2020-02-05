@@ -16,21 +16,27 @@ Ported from [hjson-py](https://github.com/hjson/hjson-py). Inspired by rxi - [js
 Library exports json.lua like and JS like api.
 
 - Lua object to HJSON - returns HJSON string
-  - `encode(obj, indent, skipkeys)` 
-  - `stringify(obj, indent, skipkeys)`
+  - `encode(obj, options)` 
+  - `stringify(obj, options)`
   - Parameters:
     - `obj` - Lua object - `table`, `string`, `number`, `nil`, `boolean`
-    - `indent` - default `"    "`. Accepts string of whitespace characters or a number representing number of spaces (non indented HJSON is JSON, automatically forwards to `_to_json` version)
-    - `skipkeys` - default `true`  Skips invalid keys. If false throws error on invalid key.
-      - Valid key types: `boolean`, `nil`, `string`
+    - `options` table with following values:
+      - `indent` - default `"    "`. Accepts string of whitespace characters or a number representing number of spaces (non indented HJSON is JSON, automatically forwards to `_to_json` version)
+      - `skipkeys` - default `true`  Skips invalid keys. If false throws error on invalid key.
+        - Valid key types: `boolean`, `nil`, `string`
+      - `item_sort_key` - sort function which is passed to `table.sort` sorting object keys 
+      - `invalidObjectsAsType` if true functions and others objects are replaced with their type name in format `__lua_<type>` e.g. `__lua_function`
 - Lua object to JSON - returns JSON string
-  - `encode(obj, indent, skipkeys)` 
-  - `stringify(obj, indent, skipkeys)`
+  - `encode(obj, options)` 
+  - `stringify(obj, options)`
   - Parameters:
     - `obj` - Lua object - `table`, `string`, `number`, `nil`, `boolean`
-    - `indent` - default `"    "`. Accepts string of whitespace characters or a number representing number of spaces
-    - `skipkeys` - default `true`  Skips invalid keys. If false throws error on invalid key.
-      - Valid key types: `boolean`, `nil`, `string`
+    - `options` table with following values:
+      - `indent` - default `"    "`. Accepts string of whitespace characters or a number representing number of spaces (non indented HJSON is JSON, automatically forwards to `_to_json` version)
+      - `skipkeys` - default `true`  Skips invalid keys. If false throws error on invalid key.
+        - Valid key types: `boolean`, `nil`, `string`
+      - `item_sort_key` - sort function which is passed to `table.sort` sorting object keys 
+      - `invalidObjectsAsType` if true functions and others objects are replaced with their type name in format `__lua_<type>` e.g. `__lua_function`
 - H/JSON to Lua object - returns Lua object
     - `decode(str, strict, object_hook, object_pairs_hook)`
     - `parse(str, strict, object_hook, object_pairs_hook)`

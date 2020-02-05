@@ -114,10 +114,9 @@ function HjsonEncoder:new(options)
     if type(options) ~= "table" then
         options = {}
     end
-    local indent, skipkeys, sort_keys, item_sort_key, invalidObjectsAsType =
+    local indent, skipkeys, item_sort_key, invalidObjectsAsType =
         options.indent,
         options.skipkeys,
-        options.sort_keys,
         options.item_sort_key,
         options.invalidObjectsAsType
 
@@ -249,17 +248,15 @@ function HjsonEncoder:new(options)
                 keysetMap[key] = k
             end
         end
-        if sort_keys then
-            if type(item_sort_key) == "function" then
-                table.sort(keyset, item_sort_key)
-            else
-                table.sort(
-                    keyset,
-                    function(a, b)
-                        return a:upper() < b:upper()
-                    end
-                )
-            end
+        if type(item_sort_key) == "function" then
+            table.sort(keyset, item_sort_key)
+        else
+            table.sort(
+                keyset,
+                function(a, b)
+                    return a:upper() < b:upper()
+                end
+            )
         end
         local buf = "{" .. newlineIndent
         for i, sk in ipairs(keyset) do
