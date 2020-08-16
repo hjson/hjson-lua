@@ -3,9 +3,16 @@ A lightweight H/JSON library for Lua
 
 Ported from [hjson-py](https://github.com/hjson/hjson-py). Inspired by rxi - [json.lua](https://github.com/rxi/json.lua).
 
-* Implemented in pure Lua: tested with latest Lua (5.3) only
+* Implemented in pure Lua: tested with Lua 5.3 and 5.4
 
 ## Setup
+
+### Lua Rocks
+
+```sh
+luarocks install hjson-lua
+```
+### Manual
 
 1. drop [hjson.lua](tree/master/hjson.lua) and [hjson folder](tree/master/hjson) folder into your project
 2. require hjson.lua
