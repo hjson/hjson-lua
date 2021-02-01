@@ -4,7 +4,7 @@ local encoder = require "hjson.encoder"
 local encoderH = require "hjson.encoderH"
 
 local function decode(str, strict, object_hook, object_pairs_hook)
-    local _decoder = decoder:new(strict, object_hook, object_pairs_hoo)
+    local _decoder = decoder:new(strict, object_hook, object_pairs_hook)
     return _decoder:decode(str)
 end
 

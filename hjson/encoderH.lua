@@ -12,7 +12,7 @@ local escape_char_map = {
 
 local COMMONRANGE = "\x7f-\x9f" -- // TODO: add unicode escape sequences
 
-function containsSequences(s, sequences)
+local function containsSequences(s, sequences)
     for _, v in ipairs(sequences) do
         if s:find(v) then
             return true
@@ -21,11 +21,11 @@ function containsSequences(s, sequences)
     return false
 end
 
-function needsEscape(s)
+local function needsEscape(s)
     return containsSequences(s, {'[\\"\x00-\x1f' .. COMMONRANGE .. "]"})
 end
 
-function needsQuotes(s)
+local function needsQuotes(s)
     local sequences = {
         "^%s",
         '^"',
@@ -45,17 +45,17 @@ function needsQuotes(s)
     return containsSequences(s, sequences)
 end
 
-function needsEscapeML(s)
+local function needsEscapeML(s)
     local sequences = {"'''", "^[\\s]+$", "[\x00-\x08\x0b\x0c\x0e-\x1f" .. COMMONRANGE .. "]"}
     return containsSequences(s, sequences)
 end
 
-function needsEscapeName(s)
+local function needsEscapeName(s)
     local sequences = {'[,{%[}%]%s:#"\']', "//", "/%*", "'''"}
     return containsSequences(s, sequences) or needsQuotes(s)
 end
 
-function startsWithNumber(s)
+local function startsWithNumber(s)
     local integer = s:match("^[\t ]*(-?[1-9]%d*)") or s:match("^[\t ]*(-?0)", begin)
     if integer then
         local frac = s:match("^(%.%d+)", #integer + 1) or ""
@@ -74,7 +74,7 @@ function startsWithNumber(s)
     return false
 end
 
-function startsWithKeyword(s)
+local function startsWithKeyword(s)
     local sequences = {"^true%s*$", "^false%s*$", "^null%s*$"}
     local startSequences = {"^true%s*[,%]}#].*$", "^false%s*[,%]}#].*$", "^null%s*[,%]}#].*$"}
 
@@ -234,7 +234,7 @@ function HjsonEncoder:new(options)
         currentIndentLevel = currentIndentLevel + 1
         local newlineIndent = "\n" .. string.rep(indent, currentIndentLevel)
         local separator = newlineIndent
-        keySeparator = ": "
+        local keySeparator = ": "
 
         -- stringified key (sk) is key in keysetMap pointing to original non stringified key key
         local keysetMap = {}
