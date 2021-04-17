@@ -57,9 +57,6 @@ local function encode(obj, options)
     return _encoderH:encode(obj)
 end
 
-
----#DES 'hjson'
----@class hjson
 local hjson = {
     encode = encode,
     ---#DES 'hjson.stringify'
