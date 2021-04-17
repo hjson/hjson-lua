@@ -7,7 +7,7 @@ local encoderH = require "hjson.encoderH"
 ---@field key any
 ---@field value any
 
----#DES 'decode'
+---#DES 'hjson.decode'
 ---
 ---decodes h/json
 ---@param str string
@@ -28,7 +28,7 @@ end
 ---@field invalidObjectsAsType boolean
 
 
----#DES 'encode_json'
+---#DES 'hjson.encode_to_json'
 ---
 ---encodes json
 ---@param obj any
@@ -39,7 +39,7 @@ local function encode_json(obj, options)
     return _encoder:encode(obj)
 end
 
----#DES 'encode_json'
+---#DES 'hjson.encode'
 ---
 ---encodes hjson
 ---@param obj any
@@ -58,12 +58,34 @@ local function encode(obj, options)
 end
 
 
+---#DES 'hjson'
+---@class hjson
 local hjson = {
     encode = encode,
+    ---#DES 'hjson.stringify'
+    ---
+    ---encodes hjson
+    ---@param obj any
+    ---@param options HjsonEncodeOptions
+    ---@return any
     stringify = encode,
     encode_to_json = encode_json,
+    ---#DES 'hjson.stringify_to_json'
+    ---
+    ---encodes json
+    ---@param obj any
+    ---@param options HjsonEncodeOptions
+    ---@return any
     stringify_to_json = encode_json,
     decode = decode,
+    ---#DES 'hjson.parse'
+    ---
+    ---decodes h/json
+    ---@param str string
+    ---@param strict boolean
+    ---@param object_hook fun(obj: table): table
+    ---@param object_pairs_hook fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[]
+    ---@return any
     parse = decode
 }
 
