@@ -1,5 +1,5 @@
 package = "hjson-lua"
-version = "0.1.2-2"
+version = "0.1.3-1"
 source = {
   url = "git://github.com/cryi/hjson-lua.git",
 }

@@ -1,4 +1,5 @@
--- MIT License - Copyright (c) 2019 Void (cryon.io)
+-- MIT License - Copyright (c) 2021 V (cryon.io)
+package.preload["hjson"] = nil --- remove default hjson
 package.path = package.path .. ";./hjson/?.lua"
 
 json = require("test.json")

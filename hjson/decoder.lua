@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2019 Void (cryon.io)
+-- MIT License - Copyright (c) 2021 V (cryon.io)
 
 local WHITESPACE = " \t\n\r"
 local PUNCTUATOR = "{}[],:"
@@ -169,7 +169,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 goto scan_string_loop_start
             elseif terminator ~= "\\" then
                 if strict then
-                    decodeError(s, begin, "Invalid control character" .. ch)
+                    decodeError(s, begin, "Invalid control character" .. terminator)
                 else
                     chunks = chunks .. terminator
                     goto scan_string_loop_start
@@ -292,7 +292,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 local frac = nil
                 local exp = nil
 
-                trimmed_range = trim(s:sub(begin, _end - 1))
+                local trimmed_range = trim(s:sub(begin, _end - 1))
                 if chf == "n" and trimmed_range == "null" then
                     return nil, _end
                 elseif chf == "t" and trimmed_range == "true" then
@@ -305,12 +305,12 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                     if integer then
                         frac = s:match("^(%.%d+)", begin + #integer) or ""
                         exp = s:match("^([eE][-+]?%d+)", begin + #integer + #frac) or ""
-                        ending = s:match("^([\t ]*)", begin + #integer + #frac + #exp) or ""
+                        local ending = s:match("^([\t ]*)", begin + #integer + #frac + #exp) or ""
                         m = integer .. frac .. exp .. ending
                     end
                 end
                 if m and begin + #m == _end then
-                    res = tonumber(integer .. frac .. exp)
+                    local res = tonumber(integer .. frac .. exp)
                     return res, _end
                 end
 
@@ -397,7 +397,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
         -- Trivial empty object
         if not objectWithoutBraces and ch == "}" then
             if type(object_pairs_hook) == "function" then
-                result = object_pairs_hook(pairs)
+                local result = object_pairs_hook(pairs)
                 return result, _end + 1
             end
             pairs = {}
@@ -440,15 +440,15 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             ch, _end = getNext(s, _end)
         end
         if type(object_pairs_hook) == "function" then
-            result = object_pairs_hook(pairs)
+            local result = object_pairs_hook(pairs)
             return result, _end
         end
 
-        pairs = dict(pairs)
+        local obj = dict(pairs)
         if type(object_hook) == "function" then
-            pairs = object_hook(pairs)
+            obj = object_hook(obj)
         end
-        return pairs, _end
+        return obj, _end
     end
 
     local function parseArray(state, scanOnce)
