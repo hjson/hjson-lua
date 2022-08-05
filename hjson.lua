@@ -11,9 +11,9 @@ local encoderH = require "hjson.encoderH"
 ---
 ---decodes h/json
 ---@param str string
----@param strict boolean
----@param object_hook fun(obj: table): table
----@param object_pairs_hook fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[]
+---@param strict boolean?
+---@param object_hook (fun(obj: table): table)?
+---@param object_pairs_hook (fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[])?
 ---@return any
 local function decode(str, strict, object_hook, object_pairs_hook)
     local _decoder = decoder:new(strict, object_hook, object_pairs_hook)
@@ -32,7 +32,7 @@ end
 ---
 ---encodes json
 ---@param obj any
----@param options HjsonEncodeOptions
+---@param options HjsonEncodeOptions?
 ---@return any
 local function encode_json(obj, options)
     local _encoder = encoder:new(options)
@@ -43,7 +43,7 @@ end
 ---
 ---encodes hjson
 ---@param obj any
----@param options HjsonEncodeOptions
+---@param options HjsonEncodeOptions?
 ---@return any
 local function encode(obj, options)
     if type(options) ~= "table" then
@@ -63,7 +63,7 @@ local hjson = {
     ---
     ---encodes hjson
     ---@param obj any
-    ---@param options HjsonEncodeOptions
+    ---@param options HjsonEncodeOptions?
     ---@return any
     stringify = encode,
     encode_to_json = encode_json,
@@ -71,7 +71,7 @@ local hjson = {
     ---
     ---encodes json
     ---@param obj any
-    ---@param options HjsonEncodeOptions
+    ---@param options HjsonEncodeOptions?
     ---@return any
     stringify_to_json = encode_json,
     decode = decode,
@@ -79,9 +79,9 @@ local hjson = {
     ---
     ---decodes h/json
     ---@param str string
-    ---@param strict boolean
-    ---@param object_hook fun(obj: table): table
-    ---@param object_pairs_hook fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[]
+    ---@param strict boolean?
+    ---@param object_hook (fun(obj: table): table)?
+    ---@param object_pairs_hook (fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[])?
     ---@return any
     parse = decode
 }
