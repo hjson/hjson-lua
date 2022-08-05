@@ -1,11 +1,11 @@
 package = "hjson-lua"
-version = "0.1.3-1"
+version = "0.1.4-1"
 source = {
-  url = "git://github.com/cryi/hjson-lua.git",
+  url = "git://github.com/hjson/hjson-lua.git",
 }
 description = {
   summary = "A lightweight H/JSON library for Lua.",
-  homepage = "https://github.com/cryi/hjson-lua",
+  homepage = "https://github.com/hjson/hjson-lua",
   license = "MIT"
 }
 dependencies = {
