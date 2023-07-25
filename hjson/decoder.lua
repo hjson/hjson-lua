@@ -151,10 +151,8 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
 
         -- callers make sure that string starts with " or '
         local exitCh = charAt(s, begin)
-        while true do
-            ::scan_string_loop_start::
-            -- From hjson-py --> '(.*?)([\'"\\\x00-\x1f])'
-            local content, terminator = s:match('(.-)([\'"\\\x00-\x1f])', _end)
+        local function scan_string()
+            local content, terminator = s:match('(.-)([\'"\\%z\001-\031])', _end)
             if not content then
                 decodeError(s, begin, "Unterminated string")
             end
@@ -163,16 +161,16 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             chunks = chunks .. content
 
             if terminator == exitCh then
-                break
+                return false -- break
             elseif terminator == '"' or terminator == "'" then
                 chunks = chunks .. terminator
-                goto scan_string_loop_start
+                return true -- continue
             elseif terminator ~= "\\" then
                 if strict then
-                    decodeError(s, begin, "Invalid control character" .. terminator)
+                    decodeError(s, begin, "Invalid control character " .. terminator)
                 else
                     chunks = chunks .. terminator
-                    goto scan_string_loop_start
+                    return true -- continue
                 end
             end
 
@@ -209,6 +207,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             end
             chunks = chunks .. chars
         end
+        while scan_string() do end
         return chunks, _end
     end
 
@@ -235,8 +234,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
         end
 
         -- When parsing multiline string values, we must look for ' characters
-        while true do
-            ::scan_mlstring_loop_start::
+        local function scan_mlstring()
             ch = charAt(s, _end)
             if ch == "" then
                 decodeError(s, _end, "Bad multiline string")
@@ -250,7 +248,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                     end
                     return string, _end
                 else
-                    goto scan_mlstring_loop_start
+                    return false
                 end
             else
                 while triple > 0 do
@@ -267,6 +265,12 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                     string = string .. ch
                 end
                 _end = _end + 1
+            end
+        end
+        while true do
+            local s, _end = scan_mlstring()
+            if s then
+                return s, _end
             end
         end
     end
@@ -286,7 +290,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             if
                 isEol or ch == "," or ch == "}" or ch == "]" or ch == "#" or
                     ch == "/" and (charAt(s, _end + 1) == "/" or charAt(s, _end + 1) == "*")
-             then
+            then
                 local m = nil
                 local integer = nil
                 local frac = nil
