@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
     types: [opened, reopened, synchronize]
     
 jobs:
@@ -23,4 +23,4 @@ jobs:
 
       - name: test hjson
         run: |
-          eli ./tests/test.lua
+          eli ./test/test.lua
