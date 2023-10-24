@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2021 V (cryon.io)
+-- MIT License - Copyright (c) 2023 V (alis.is)
 local decoder = require "hjson.decoder"
 local encoder = require "hjson.encoder"
 local encoderH = require "hjson.encoderH"
@@ -86,4 +86,5 @@ local hjson = {
     parse = decode
 }
 
+print"loaded"
 return hjson

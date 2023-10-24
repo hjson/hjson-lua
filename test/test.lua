@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2021 V (cryon.io)
+-- MIT License - Copyright (c) 2023 V (alis.is)
 package.preload["hjson"] = nil --- remove default hjson
 package.path = package.path .. ";./hjson/?.lua"
 

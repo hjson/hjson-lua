@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2021 V (cryon.io)
+-- MIT License - Copyright (c) 2023 V (alis.is)
 
 local WHITESPACE = " \t\n\r"
 local PUNCTUATOR = "{}[],:"
@@ -206,6 +206,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 end
             end
             chunks = chunks .. chars
+            return true
         end
         while scan_string() do end
         return chunks, _end
