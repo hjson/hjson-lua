@@ -161,16 +161,16 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             chunks = chunks .. content
 
             if terminator == exitCh then
-                return false -- break
+                return true -- break
             elseif terminator == '"' or terminator == "'" then
                 chunks = chunks .. terminator
-                return true -- continue
+                return -- continue
             elseif terminator ~= "\\" then
                 if strict then
                     decodeError(s, begin, "Invalid control character " .. terminator)
                 else
                     chunks = chunks .. terminator
-                    return true -- continue
+                    return -- continue
                 end
             end
 
@@ -206,9 +206,8 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 end
             end
             chunks = chunks .. chars
-            return true
         end
-        while scan_string() do end
+        while not scan_string() do end
         return chunks, _end
     end
 
