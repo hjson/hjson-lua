@@ -86,5 +86,4 @@ local hjson = {
     parse = decode
 }
 
-print"loaded"
 return hjson
