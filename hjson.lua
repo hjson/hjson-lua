@@ -21,11 +21,11 @@ local function decode(str, strict, object_hook, object_pairs_hook)
 end
 
 ---@class HjsonEncodeOptions
----@field indent string|boolean
----@field skipkeys boolean
----@field sortKeys boolean
----@field item_sort_key fun(k1:any, k2:any): boolean
----@field invalidObjectsAsType boolean
+---@field indent string|boolean|nil
+---@field skipkeys boolean?
+---@field sortKeys boolean?
+---@field item_sort_key (fun(k1:any, k2:any): boolean)?
+---@field invalidObjectsAsType boolean?
 
 
 ---#DES 'hjson.encode_to_json'
