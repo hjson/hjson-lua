@@ -9,7 +9,7 @@ local escape_char_map = {
     ["\t"] = "\\t"
 }
 
-local COMMONRANGE = "\x7f-\x9f" -- // TODO: add unicode escape sequences
+local COMMONRANGE = "\127-\159" -- // TODO: add unicode escape sequences
 
 local function containsSequences(s, sequences)
     for _, v in ipairs(sequences) do if s:find(v) then return true end end
@@ -17,20 +17,20 @@ local function containsSequences(s, sequences)
 end
 
 local function needsEscape(s)
-    return containsSequences(s, {'[\\"\x00-\x1f' .. COMMONRANGE .. "]"})
+    return containsSequences(s, {"%z", '[\\"\001-\031' .. COMMONRANGE .. "]"})
 end
 
 local function needsQuotes(s)
     local sequences = {
         "^%s", '^"', "^'", "^#", "^/%*", "^//", "^{", "^}", "^%[", "^%]", "^:",
-        "^,", "%s$", "[\x00-\x1f" .. COMMONRANGE .. "]"
+        "^,", "%s$", "%z", "[\001-\031" .. COMMONRANGE .. "]"
     }
     return containsSequences(s, sequences)
 end
 
 local function needsEscapeML(s)
     local sequences = {
-        "'''", "^[\\s]+$", "[\x00-\x08\x0b\x0c\x0e-\x1f" .. COMMONRANGE .. "]"
+        "'''", "^[\\s]+$", "%z", "[\01-\08\011\012\014-\031" .. COMMONRANGE .. "]"
     }
     return containsSequences(s, sequences)
 end
