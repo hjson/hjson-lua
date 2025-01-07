@@ -96,11 +96,11 @@ local HjsonEncoder = {}
 
 function HjsonEncoder:new(options)
     if type(options) ~= "table" then options = {} end
-    local indent, skipkeys, sortKeys, item_sort_key, invalidObjectsAsType =
-        options.indent, options.skipkeys, options.sortKeys,
-        options.item_sort_key, options.invalidObjectsAsType
+    local indent, skip_keys, sort_keys, item_sort_key, invalid_objects_as_type =
+        options.indent, options.skip_keys, options.sort_keys,
+        options.item_sort_key, options.invalid_objects_as_type
 
-    if skipkeys == nil then skipkeys = true end
+    if skip_keys == nil then skip_keys = true end
     if indent == nil then indent = "    " end
     if (type(indent) ~= "number" or indent < 2) and
         (type(indent) ~= "string" or not indent:find("%s%s*")) then
@@ -165,7 +165,7 @@ function HjsonEncoder:new(options)
                 return key
             end
         end
-        if skipkeys then return nil end
+        if skip_keys then return nil end
         error(string.format("Invalid key type - %s (%s) ", _type, key))
     end
 
@@ -211,7 +211,7 @@ function HjsonEncoder:new(options)
                 keysetMap[key] = k
             end
         end
-        if sortKeys then
+        if sort_keys then
             if type(item_sort_key) == "function" then
                 table.sort(keyset, item_sort_key)
             else
@@ -257,7 +257,7 @@ function HjsonEncoder:new(options)
         end
         local func = encodeFunctionMap[_type]
         if type(func) == "function" then return func(o, _encode) end
-        if invalidObjectsAsType then
+        if invalid_objects_as_type then
             return encodeFunctionMap["string"]('__lua_' .. type(o))
         end
         error("Unexpected type '" .. _type .. "'")

@@ -3,7 +3,7 @@ local decoder = require "hjson.decoder"
 local encoder = require "hjson.encoder"
 local encoderH = require "hjson.encoderH"
 
----@class HjsonKeyValuePair
+---@class HJsonKeyValuePair
 ---@field key any
 ---@field value any
 
@@ -13,28 +13,54 @@ local encoderH = require "hjson.encoderH"
 ---@param str string
 ---@param strict boolean?
 ---@param object_hook (fun(obj: table): table)?
----@param object_pairs_hook (fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[])?
+---@param object_pairs_hook (fun(pairs: HJsonKeyValuePair[]): HJsonKeyValuePair[])?
 ---@return any
 local function decode(str, strict, object_hook, object_pairs_hook)
     local _decoder = decoder:new(strict, object_hook, object_pairs_hook)
     return _decoder:decode(str)
 end
 
----@class HjsonEncodeOptions
+---@class HJsonEncodeOptions
 ---@field indent string|boolean|nil
----@field skipkeys boolean?
----@field sortKeys boolean?
+---@field skip_keys boolean?
+---@field sort_keys boolean?
 ---@field item_sort_key (fun(k1:any, k2:any): boolean)?
----@field invalidObjectsAsType boolean?
+---@field invalid_objects_as_type boolean?
 
+---@param options HJsonEncodeOptions?
+---@return HJsonEncodeOptions
+local function preprocess_encode_options(options)
+    if type(options) ~= "table" then
+        local result = {}  --[[@as HJsonEncodeOptions]]
+        return result
+    end
+
+    if options.skipkeys == true then
+        print("skipkeys is deprecated, use skip_keys instead")
+        options.skip_keys = true
+    end
+
+    if options.sortKeys == true then
+        print("sortKeys is deprecated, use sort_keys instead")
+        options.sort_keys = true
+    end
+
+    if options.invalidObjectsAsType == true then
+        print("invalidObjectsAsType is deprecated, use invalid_objects_as_type instead")
+        options.invalid_objects_as_type = true
+    end
+    return options
+end
 
 ---#DES 'hjson.encode_to_json'
 ---
 ---encodes json
 ---@param obj any
----@param options HjsonEncodeOptions?
+---@param options HJsonEncodeOptions?
 ---@return any
 local function encode_json(obj, options)
+    options = preprocess_encode_options(options)
+
     local _encoder = encoder:new(options)
     return _encoder:encode(obj)
 end
@@ -43,12 +69,10 @@ end
 ---
 ---encodes hjson
 ---@param obj any
----@param options HjsonEncodeOptions?
+---@param options HJsonEncodeOptions?
 ---@return any
 local function encode(obj, options)
-    if type(options) ~= "table" then
-        options = {}
-    end
+    options = preprocess_encode_options(options) --[[@as HJsonEncodeOptions]]
 
     if options.indent == "" or options.indent == false or options.indent == 0 then
         return encode_json(obj, options)
@@ -63,7 +87,7 @@ local hjson = {
     ---
     ---encodes hjson
     ---@param obj any
-    ---@param options HjsonEncodeOptions?
+    ---@param options HJsonEncodeOptions?
     ---@return any
     stringify = encode,
     encode_to_json = encode_json,
@@ -71,7 +95,7 @@ local hjson = {
     ---
     ---encodes json
     ---@param obj any
-    ---@param options HjsonEncodeOptions?
+    ---@param options HJsonEncodeOptions?
     ---@return any
     stringify_to_json = encode_json,
     decode = decode,
@@ -81,7 +105,7 @@ local hjson = {
     ---@param str string
     ---@param strict boolean?
     ---@param object_hook (fun(obj: table): table)?
-    ---@param object_pairs_hook (fun(pairs: HjsonKeyValuePair[]): HjsonKeyValuePair[])?
+    ---@param object_pairs_hook (fun(pairs: HJsonKeyValuePair[]): HJsonKeyValuePair[])?
     ---@return any
     parse = decode
 }

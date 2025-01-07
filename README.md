@@ -29,11 +29,11 @@ Library exports json.lua like and JS like api.
     - `obj` - Lua object - `table`, `string`, `number`, `nil`, `boolean`
     - `options` table with following values:
       - `indent` - default `"    "`. Accepts string of whitespace characters or a number representing number of spaces (non indented HJSON is JSON, automatically forwards to `_to_json` version)
-      - `skipkeys` - default `true`  Skips invalid keys. If false throws error on invalid key.
+      - `skip_keys` - default `true`  Skips invalid keys. If false throws error on invalid key.
         - Valid key types: `boolean`, `nil`, `string`
-      - `sortKeys` - whether to sort keys in objects
+      - `sort_keys` - whether to sort keys in objects
       - `item_sort_key` - sort function which is passed to `table.sort` sorting object keys 
-      - `invalidObjectsAsType` if true functions and others objects are replaced with their type name in format `__lua_<type>` e.g. `__lua_function`
+      - `invalid_objects_as_type` if true functions and others objects are replaced with their type name in format `__lua_<type>` e.g. `__lua_function`
 - Lua object to JSON - returns JSON string
   - `encode(obj, options)` 
   - `stringify(obj, options)`
@@ -41,11 +41,11 @@ Library exports json.lua like and JS like api.
     - `obj` - Lua object - `table`, `string`, `number`, `nil`, `boolean`
     - `options` table with following values:
       - `indent` - default `"    "`. Accepts string of whitespace characters or a number representing number of spaces (non indented HJSON is JSON, automatically forwards to `_to_json` version)
-      - `skipkeys` - default `true`  Skips invalid keys. If false throws error on invalid key.
+      - `skip_keys` - default `true`  Skips invalid keys. If false throws error on invalid key.
         - Valid key types: `boolean`, `nil`, `string`
-      - `sortKeys` - whether to sort keys in objects
+      - `sort_keys` - whether to sort keys in objects
       - `item_sort_key` - sort function which is passed to `table.sort` sorting object keys 
-      - `invalidObjectsAsType` if true functions and others objects are replaced with their type name in format `__lua_<type>` e.g. `__lua_function`
+      - `invalid_objects_as_type` if true functions and others objects are replaced with their type name in format `__lua_<type>` e.g. `__lua_function`
 - H/JSON to Lua object - returns Lua object
     - `decode(str, strict, object_hook, object_pairs_hook)`
     - `parse(str, strict, object_hook, object_pairs_hook)`
