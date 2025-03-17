@@ -1,5 +1,15 @@
 -- MIT License - Copyright (c) 2023 V (alis.is)
-package.preload["hjson"] = nil --- remove default hjson
+-- remove preloaded modules
+package.preload["hjson"] = nil
+package.loaded["hjson"] = nil
+package.preload["hjson.decoder"] = nil
+package.loaded["hjson.decoder"] = nil
+package.preload["hjson.encoder"] = nil
+package.loaded["hjson.encoder"] = nil
+package.preload["hjson.encoderH"] = nil
+package.loaded["hjson.encoderH"] = nil
+
+
 package.path = package.path .. ";./hjson/?.lua"
 
 json = require("test.json")
