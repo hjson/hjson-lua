@@ -33,17 +33,17 @@ local function preprocess_encode_options(options)
         return result
     end
 
-    if options.skip_keys == true then
+    if options.skipKeys == true then
         print("skipkeys is deprecated, use skip_keys instead")
         options.skip_keys = true
     end
 
-    if options.sort_keys == true then
+    if options.sortKeys == true then
         print("sortKeys is deprecated, use sort_keys instead")
         options.sort_keys = true
     end
 
-    if options.invalid_objects_as_type == true then
+    if options.invalidObjectsAsType == true then
         print("invalidObjectsAsType is deprecated, use invalid_objects_as_type instead")
         options.invalid_objects_as_type = true
     end
