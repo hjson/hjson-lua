@@ -83,7 +83,7 @@ function HjsonDecoder:new(options)
     if type(options.strict) ~= "boolean" then
         options.strict = true
     end
-    if type(options.max_depth) ~= "number" then
+    if type(options.max_depth) ~= "number" or options.max_depth < 1 then
         options.max_depth = DEFAULT_MAX_DEPTH
     end
 
