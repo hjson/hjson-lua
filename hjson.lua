@@ -11,12 +11,10 @@ local encoderH = require "hjson.encoderH"
 ---
 ---decodes h/json
 ---@param str string
----@param strict boolean?
----@param object_hook (fun(obj: table): table)?
----@param object_pairs_hook (fun(pairs: HJsonKeyValuePair[]): HJsonKeyValuePair[])?
+---@param options HjsonDecoderOptions
 ---@return any
-local function decode(str, strict, object_hook, object_pairs_hook)
-    local _decoder = decoder:new(strict, object_hook, object_pairs_hook)
+local function decode(str, options)
+    local _decoder = decoder:new(options)
     return _decoder:decode(str)
 end
 
@@ -35,17 +33,17 @@ local function preprocess_encode_options(options)
         return result
     end
 
-    if options.skipkeys == true then
+    if options.skip_keys == true then
         print("skipkeys is deprecated, use skip_keys instead")
         options.skip_keys = true
     end
 
-    if options.sortKeys == true then
+    if options.sort_keys == true then
         print("sortKeys is deprecated, use sort_keys instead")
         options.sort_keys = true
     end
 
-    if options.invalidObjectsAsType == true then
+    if options.invalid_objects_as_type == true then
         print("invalidObjectsAsType is deprecated, use invalid_objects_as_type instead")
         options.invalid_objects_as_type = true
     end
@@ -103,11 +101,9 @@ local hjson = {
     ---
     ---decodes h/json
     ---@param str string
-    ---@param strict boolean?
-    ---@param object_hook (fun(obj: table): table)?
-    ---@param object_pairs_hook (fun(pairs: HJsonKeyValuePair[]): HJsonKeyValuePair[])?
+    ---@param options HjsonDecoderOptions
     ---@return any
-    parse = decode
+    parse = decode,
 }
 
 return hjson

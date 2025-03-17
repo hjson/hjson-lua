@@ -1,4 +1,5 @@
 -- MIT License - Copyright (c) 2023 V (alis.is)
+local DEFAULT_MAX_DEPTH = 1000
 
 local WHITESPACE = " \t\n\r"
 local PUNCTUATOR = "{}[],:"
@@ -37,34 +38,55 @@ local function decodeError(str, idx, msg)
     error(string.format("%s at line %d col %d", msg, line_count, col_count))
 end
 
-local HjsonDecoder = {}
---[[Hjson decoder
-Performs the following translations in decoding by default:
-** NOTE: nil is used in lua for reference removal and so arrays with null wont contain nil in lua representation.
-Same objects wont contain keys with nil value.
+---@class HjsonDecoderOptions
+---@field strict boolean?
+---@field object_hook (fun(obj: table): table)?
+---@field object_pairs_hook (fun(pairs: HJsonKeyValuePair[]): HJsonKeyValuePair[])?
+---@field max_depth number?
 
-+---------------+-------------------+
-| JSON          | Lua               |
-+===============+===================+
-| object        | table             |
-+---------------+-------------------+
-| array         | table             |
-+---------------+-------------------+
-| string        | string            |
-+---------------+-------------------+
-| number        | number            |
-+---------------+-------------------+
-| true          | true              |
-+---------------+-------------------+
-| false         | false             |
-+---------------+-------------------+
-| null          | nil               |
-+---------------+-------------------+
-]]
-function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
-    if strict == nil then
-        strict = true
+---@class HjsonDecoder
+---@field decode fun(self: HjsonDecoder, s: string): any
+
+local HjsonDecoder = {}
+--- Hjson decoder
+--- Performs the following translations in decoding by default:
+--- ** NOTE: nil is used in lua for reference removal and so arrays with null wont contain nil in lua representation.
+--- Same objects wont contain keys with nil value.
+--- +---------------+-------------------+
+--- | JSON          | Lua               |
+--- +===============+===================+
+--- | object        | table             |
+--- +---------------+-------------------+
+--- | array         | table             |
+--- +---------------+-------------------+
+--- | string        | string            |
+--- +---------------+-------------------+
+--- | number        | number            |
+--- +---------------+-------------------+
+--- | true          | true              |
+--- +---------------+-------------------+
+--- | false         | false             |
+--- +---------------+-------------------+
+--- | null          | nil               |
+--- +---------------+-------------------+
+
+--- Creates a new HjsonDecoder instance
+---@param options HjsonDecoderOptions
+---@return HjsonDecoder
+function HjsonDecoder:new(options)
+    if type(options) ~= "table" then
+        options = {
+            strict = type(options) == "boolean" and options or true, -- for backward compatibility
+        }
     end
+
+    if type(options.strict) ~= "boolean" then
+        options.strict = true
+    end
+    if type(options.max_depth) ~= "number" then
+        options.max_depth = DEFAULT_MAX_DEPTH
+    end
+
     local memo = {}
 
     local function getEol(s, _end)
@@ -166,7 +188,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 chunks = chunks .. terminator
                 return -- continue
             elseif terminator ~= "\\" then
-                if strict then
+                if options.strict then
                     decodeError(s, begin, "Invalid control character " .. terminator)
                 else
                     chunks = chunks .. terminator
@@ -367,9 +389,9 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
         end
     end
 
-    local function parseObject(state, scanOnce, objectWithoutBraces)
-        if objectWithoutBraces == nil then
-            objectWithoutBraces = false
+    local function parse_object(state, scan_once, is_object_without_braces, depth)
+        if is_object_without_braces == nil then
+            is_object_without_braces = false
         end
         local s = state.s
         local _end = state._end
@@ -399,14 +421,14 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
         ch, _end = getNext(s, _end)
 
         -- Trivial empty object
-        if not objectWithoutBraces and ch == "}" then
-            if type(object_pairs_hook) == "function" then
-                local result = object_pairs_hook(pairs)
+        if not is_object_without_braces and ch == "}" then
+            if type(options.object_pairs_hook) == "function" then
+                local result = options.object_pairs_hook(pairs)
                 return result, _end + 1
             end
             pairs = {}
-            if type(object_hook) == "function" then
-                pairs = object_hook(pairs)
+            if type(options.object_hook) == "function" then
+                pairs = options.object_hook(pairs)
             end
             return pairs, _end + 1
         end
@@ -423,7 +445,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             end
 
             ch, _end = getNext(s, _end + 1)
-            value, _end = scanOnce(s, _end)
+            value, _end = scan_once(s, _end, depth)
             table.insert(pairs, {[key] = value})
 
             ch, _end = getNext(s, _end)
@@ -431,7 +453,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 ch, _end = getNext(s, _end + 1)
             end
 
-            if objectWithoutBraces then
+            if is_object_without_braces then
                 if ch == "" then
                     break
                 end
@@ -443,19 +465,19 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
             end
             ch, _end = getNext(s, _end)
         end
-        if type(object_pairs_hook) == "function" then
-            local result = object_pairs_hook(pairs)
+        if type(options.object_pairs_hook) == "function" then
+            local result = options.object_pairs_hook(pairs)
             return result, _end
         end
 
         local obj = dict(pairs)
-        if type(object_hook) == "function" then
-            obj = object_hook(obj)
+        if type(options.object_hook) == "function" then
+            obj = options.object_hook(obj)
         end
         return obj, _end
     end
 
-    local function parseArray(state, scanOnce)
+    local function parse_array(state, scan_once, depth)
         local ch
         local s = state.s
         local _end = state._end
@@ -472,7 +494,7 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
 
         while true do
             local value
-            value, _end = scanOnce(s, _end)
+            value, _end = scan_once(s, _end, depth)
             table.insert(values, value)
             ch, _end = getNext(s, _end)
             if ch == "," then
@@ -489,7 +511,15 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
         return values, _end
     end
 
-    local function _scanOnce(string, idx)
+    local function _scan_once(string, idx, depth)
+        if type(depth) ~= "number" then
+            depth = 0
+        end
+        depth = depth + 1
+        if depth > options.max_depth then
+            decodeError(string, idx, "Exceeded max depth")
+        end
+
         local ch = charAt(string, idx)
         if not ch then
             decodeError(string, idx, "Expecting value")
@@ -502,18 +532,18 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
                 return parseString(string, idx + 1)
             end
         elseif ch == "{" then
-            return parseObject({s = string, _end = idx + 1}, _scanOnce)
+            return parse_object({s = string, _end = idx + 1}, _scan_once, false, depth)
         elseif ch == "[" then
-            return parseArray({s = string, _end = idx + 1}, _scanOnce)
+            return parse_array({s = string, _end = idx + 1}, _scan_once, depth)
         end
         return parsePrimitive(string, idx)
     end
 
-    local function scanOnce(string, idx)
+    local function scan_once(string, idx)
         if idx <= 0 then
             decodeError(string, idx, "Expecting value")
         end
-        local status, result, _end = pcall(_scanOnce, string, idx)
+        local status, result, _end = pcall(_scan_once, string, idx)
         memo = {}
         if not status then
             error(result)
@@ -522,11 +552,11 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
         return result, _end
     end
 
-    local function scanObjectOnce(string, idx)
+    local function scan_object_once(string, idx)
         if idx <= 0 then
             decodeError(string, idx, "Expecting value")
         end
-        local status, result, _end = pcall(parseObject, {s = string, _end = idx}, _scanOnce, true)
+        local status, result, _end = pcall(parse_object, {s = string, _end = idx}, _scan_once, true)
         memo = {}
         if not status then
             error(result)
@@ -538,8 +568,8 @@ function HjsonDecoder:new(strict, object_hook, object_pairs_hook)
     -- Finally create and return instance of decoder
     local hd = {
         get_next = getNext,
-        scan_once = scanOnce,
-        scan_object_once = scanObjectOnce
+        scan_once = scan_once,
+        scan_object_once = scan_object_once
     }
     setmetatable(hd, self)
     self.__index = self
