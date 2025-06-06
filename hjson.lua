@@ -20,8 +20,8 @@ local function decode(str, options)
 end
 
 ---@class HJsonEncodeOptions
----@field indent string|boolean|nil
----@field skip_keys boolean?
+---@field indent string|boolean|integer|nil
+---@field skip_keys boolean? skip invalid keys
 ---@field sort_keys boolean?
 ---@field item_sort_key (fun(k1:any, k2:any): boolean)?
 ---@field invalid_objects_as_type boolean?

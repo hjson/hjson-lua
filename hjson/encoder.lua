@@ -8,6 +8,7 @@ local escape_char_map = {
     ["\r"] = "\\r",
     ["\t"] = "\\t"
 }
+local default_indent = false
 
 local function isArray(t)
     local i = 0
@@ -45,19 +46,18 @@ function JsonEncoder:new(options)
         options.item_sort_key, options.invalid_objects_as_type
 
     if skip_invalid_keys == nil then skip_invalid_keys = true end
-    if indent == nil then indent = "    " end
-    if type(indent) ~= "number" and type(indent) ~= "string" and type(indent) ~=
-        "boolean" then
-        error(
-            "indent (#1 parameter) has to be of type string, number or boolean")
+    local indent_type = type(indent)
+    assert(indent_type == "string" or indent_type == "number" or indent_type == "boolean" or indent == nil,
+           "indent has to be of type string, number or boolean, got " .. indent_type)
+    assert(indent_type ~= "string" or indent:match("^%s*$"),
+           "indent has to be a string consisting of whitespace characters only")
+
+    if type(indent) == "number" then
+        indent = math.floor(indent)
+        indent = string.rep(" ", indent)
     end
-    if type(indent) == "number" then indent = string.rep(" ", indent) end
-
-    if type(indent) == "boolean" and indent then indent = "    " end
-
-    assert(indent and indent:match("%s*"),
-           "indent (#1 parameter) has to be of type string with at least 2 spaces or integer greater than 1")
-
+    if indent == true then indent = "\t" end
+    if not indent or indent == "" then indent = default_indent end
 
     local stack = {}
     local currentIndentLevel = 0
