@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2023 V (alis.is)
+-- MIT License - Copyright (c) 2025 V (alis.is)
 local DEFAULT_MAX_DEPTH = 1000
 
 local WHITESPACE = " \t\n\r"
@@ -25,7 +25,7 @@ local function charAt(s, pos)
     return s:sub(pos, pos)
 end
 
-local function decodeError(str, idx, msg)
+local function decode_error(str, idx, msg)
     local line_count = 1
     local col_count = 1
     for i = 1, idx - 1 do
@@ -45,7 +45,7 @@ end
 ---@field max_depth number?
 
 ---@class HjsonDecoder
----@field decode fun(self: HjsonDecoder, s: string): any
+---@field decode fun(self: HjsonDecoder, s: string): any, string?, boolean
 
 local HjsonDecoder = {}
 --- Hjson decoder
@@ -160,7 +160,7 @@ function HjsonDecoder:new(options)
         elseif n <= 0x10ffff then
             return string.char(f(n / 262144) + 240, f(n % 262144 / 4096) + 128, f(n % 4096 / 64) + 128, n % 64 + 128)
         end
-        decodeError(s, _end, string.format("invalid unicode codepoint '%x'", n))
+        decode_error(s, _end, string.format("invalid unicode codepoint '%x'", n))
     end
 
     local function parseString(s, _end)
@@ -176,7 +176,7 @@ function HjsonDecoder:new(options)
         local function scan_string()
             local content, terminator = s:match('(.-)([\'"\\%z\001-\031])', _end)
             if not content then
-                decodeError(s, begin, "Unterminated string")
+                decode_error(s, begin, "Unterminated string")
             end
 
             _end = _end + #content + #terminator
@@ -189,7 +189,7 @@ function HjsonDecoder:new(options)
                 return -- continue
             elseif terminator ~= "\\" then
                 if options.strict then
-                    decodeError(s, begin, "Invalid control character " .. terminator)
+                    decode_error(s, begin, "Invalid control character " .. terminator)
                 else
                     chunks = chunks .. terminator
                     return -- continue
@@ -197,14 +197,14 @@ function HjsonDecoder:new(options)
             end
 
             if #s < _end then
-                decodeError(s, _end, "Unterminated string")
+                decode_error(s, _end, "Unterminated string")
             end
 
             local chars
             local esc = charAt(s, _end)
             if esc ~= "u" then
                 if not esc or not BACKSLASH[esc] then
-                    decodeError(s, _end, "Invalid \\X escape sequence")
+                    decode_error(s, _end, "Invalid \\X escape sequence")
                 end
                 chars = BACKSLASH[esc]
                 _end = _end + 1
@@ -213,7 +213,7 @@ function HjsonDecoder:new(options)
                 local msg = "Invalid \\uXXXX escape sequence"
                 esc = s:sub(_end + 1, _end + 4)
                 if #esc ~= 4 or not esc:find("%x%x%x%x") then
-                    decodeError(s, _end - 1, msg)
+                    decode_error(s, _end - 1, msg)
                 end
                 _end = _end + 5
                 if esc:find("^[dD][89aAbB]") and s:sub(_end, _end + 1) == "\\u" then
@@ -259,7 +259,7 @@ function HjsonDecoder:new(options)
         local function scan_mlstring()
             ch = charAt(s, _end)
             if ch == "" then
-                decodeError(s, _end, "Bad multiline string")
+                decode_error(s, _end, "Bad multiline string")
             end
             if ch == "'" then
                 triple = triple + 1
@@ -302,7 +302,7 @@ function HjsonDecoder:new(options)
         local chf, begin = getNext(s, _end)
         _end = begin
         if PUNCTUATOR:find(chf, 1, true) then
-            decodeError(s, _end, "Found a punctuator character when expecting a quoteless string (check your syntax)")
+            decode_error(s, _end, "Found a punctuator character when expecting a quoteless string (check your syntax)")
         end
 
         while true do
@@ -359,14 +359,14 @@ function HjsonDecoder:new(options)
         while true do
             ch = charAt(s, _end)
             if ch == "" then
-                decodeError(s, _end, "Bad key name (eof)")
+                decode_error(s, _end, "Bad key name (eof)")
             end
             if ch == ":" then
                 if begin == _end then
-                    decodeError(s, begin, "Found ':' but no key name (for an empty key name use quotes)")
+                    decode_error(s, begin, "Found ':' but no key name (for an empty key name use quotes)")
                 elseif space >= 0 then
                     if space ~= _end - 1 then
-                        decodeError(s, _end, "Found whitespace in your key name (use quotes to include)")
+                        decode_error(s, _end, "Found whitespace in your key name (use quotes to include)")
                     end
                     return trim(s:sub(begin, _end - 1)), _end
                 else
@@ -377,7 +377,7 @@ function HjsonDecoder:new(options)
                     space = _end
                 end
             elseif ch == "{" or ch == "}" or ch == "[" or ch == "]" or ch == "," then
-                decodeError(
+                decode_error(
                     s,
                     begin,
                     "Found '" ..
@@ -441,7 +441,7 @@ function HjsonDecoder:new(options)
 
             ch, _end = getNext(s, _end)
             if ch ~= ":" then
-                decodeError(s, _end, "Expecting ':' delimiter")
+                decode_error(s, _end, "Expecting ':' delimiter")
             end
 
             ch, _end = getNext(s, _end + 1)
@@ -485,7 +485,7 @@ function HjsonDecoder:new(options)
         ch, _end = getNext(s, _end)
 
         if ch == "" then
-            decodeError(s, _end, "End of input while parsing an array (did you forget a closing ']'?)")
+            decode_error(s, _end, "End of input while parsing an array (did you forget a closing ']'?)")
         end
         -- Look-ahead for trivial empty array
         if ch == "]" then
@@ -517,12 +517,12 @@ function HjsonDecoder:new(options)
         end
         depth = depth + 1
         if depth > options.max_depth then
-            decodeError(string, idx, "Exceeded max depth")
+            decode_error(string, idx, "Exceeded max depth")
         end
 
         local ch = charAt(string, idx)
         if not ch then
-            decodeError(string, idx, "Expecting value")
+            decode_error(string, idx, "Expecting value")
         end
 
         if ch == '"' or ch == "'" then
@@ -541,7 +541,7 @@ function HjsonDecoder:new(options)
 
     local function scan_once(string, idx)
         if idx <= 0 then
-            decodeError(string, idx, "Expecting value")
+            decode_error(string, idx, "expecting value")
         end
         local status, result, _end = pcall(_scan_once, string, idx)
         memo = {}
@@ -554,7 +554,7 @@ function HjsonDecoder:new(options)
 
     local function scan_object_once(string, idx)
         if idx <= 0 then
-            decodeError(string, idx, "Expecting value")
+            decode_error(string, idx, "expecting value")
         end
         local status, result, _end = pcall(parse_object, {s = string, _end = idx}, _scan_once, true)
         memo = {}
@@ -577,29 +577,39 @@ function HjsonDecoder:new(options)
     return hd
 end
 
+---@param s any
+---@return any, string?, boolean
 function HjsonDecoder:decode(s)
     --[[
         Returns the Lua representation of ``s`` (a ``ascii`` or ``utf-8`` string
         instance containing a JSON document)
     ]]
-    local ch
-    local obj, _end = self:raw_decode(s)
-    ch, _end = self.get_next(s, _end)
-    if _end ~= #s + 1 then
-        decodeError(s, _end, "Extra data")
+    assert(type(s) == "string", "HjsonDecoder:decode expects a string as input")
+
+    local status, objOrError = pcall(function()
+        local obj, _end = self:__raw_decode(s)
+        _, _end = self.get_next(s, _end)
+        if _end ~= #s + 1 then
+            decode_error(s, _end, "extra data")
+        end
+        return obj
+    end)
+
+    if not status then
+        return nil, objOrError, false
     end
 
-    return obj
+    return objOrError, nil, true
 end
 
-function HjsonDecoder:raw_decode(s, idx)
+function HjsonDecoder:__raw_decode(s, idx)
     local ch
     if idx == nil then
         idx = 1
     end
 
     if idx <= 0 then
-        decodeError(s, idx, "Expecting value")
+        decode_error(s, idx, "expecting value")
     end
 
     -- Strip UTF-8 bom

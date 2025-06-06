@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2023 V (alis.is)
+-- MIT License - Copyright (c) 2025 V (alis.is)
 local escape_char_map = {
     ["\\"] = "\\\\",
     ['"'] = '\\"',
@@ -29,9 +29,9 @@ end
 local function encodeNil(val) return "null" end
 
 local function encodeNumber(val)
-    -- Check for NaN, -inf and inf
-    if val ~= val or val <= -math.huge or val >= math.huge then
-        error("unexpected number value '" .. tostring(val) .. "'")
+    -- Check for -inf and inf
+    if val <= -math.huge or val >= math.huge then
+        return nil, "unexpected number value '" .. tostring(val) .. "'"
     end
     return string.format("%.14g", val)
 end
@@ -40,11 +40,11 @@ local JsonEncoder = {}
 
 function JsonEncoder:new(options)
     if type(options) ~= "table" then options = {} end
-    local indent, skip_keys, sort_keys, item_sort_key, invalid_objects_as_type =
+    local indent, skip_invalid_keys, sort_keys, item_sort_key, invalid_objects_as_type =
         options.indent, options.skip_keys, options.sort_keys,
         options.item_sort_key, options.invalid_objects_as_type
 
-    if skip_keys == nil then skip_keys = true end
+    if skip_invalid_keys == nil then skip_invalid_keys = true end
     if indent == nil then indent = "    " end
     if type(indent) ~= "number" and type(indent) ~= "string" and type(indent) ~=
         "boolean" then
@@ -55,13 +55,15 @@ function JsonEncoder:new(options)
 
     if type(indent) == "boolean" and indent then indent = "    " end
 
-    if indent and not indent:match("%s*") then
-        error("Indent has to contain only whitespace characters or be a number")
-    end
+    assert(indent and indent:match("%s*"),
+           "indent (#1 parameter) has to be of type string with at least 2 spaces or integer greater than 1")
+
 
     local stack = {}
     local currentIndentLevel = 0
 
+    ---@param key string|number|boolean|nil
+    ---@return string?, string?
     local function stringifyKey(key)
         local _type = type(key)
         if _type == "boolean" or _type == "number" then
@@ -71,13 +73,18 @@ function JsonEncoder:new(options)
         elseif _type == "string" then
             return encodeString(key)
         end
-        if skip_keys then return nil end
-        error(string.format("Invalid key type - %s (%s) ", _type, key))
+        if skip_invalid_keys then return nil end
+        return nil, "invalid key type - " .. _type .. " (" .. tostring(key) .. ")"
     end
 
+    ---@param arr any[]
+    ---@param encode fun(v: any): string?, string?
+    ---@return string?, string?
     local function encodeArray(arr, encode)
         if not arr or #arr == 0 then return "[]" end
-        if stack[arr] then error("circular reference") end
+        if stack[arr] then
+            return nil, "circular reference"
+        end
         stack[arr] = true
         local separator = ","
         local newlineIndent = ""
@@ -88,7 +95,11 @@ function JsonEncoder:new(options)
         end
         local buf = "[" .. newlineIndent
         for i, v in ipairs(arr) do
-            buf = buf .. encode(v)
+            local encoded, err = encode(v)
+            if not encoded then
+                return nil, err
+            end
+            buf = buf .. encoded
             if i ~= #arr then buf = buf .. separator end
         end
         if indent then
@@ -102,7 +113,9 @@ function JsonEncoder:new(options)
 
     local function encodeTable(tab, encode)
         if not tab then return "{}" end
-        if stack[tab] then error("circular reference") end
+        if stack[tab] then 
+            return nil, "circular reference"
+        end
         stack[tab] = true
         local newlineIndent = ""
         local separator = ","
@@ -116,13 +129,14 @@ function JsonEncoder:new(options)
 
         local keysetMap = {} -- stringified key (sk) is key for real key
         local keyset = {}
-        local n = 0
 
         for k in pairs(tab) do
-            local key = stringifyKey(k)
+            local key, err = stringifyKey(k)
             if key ~= nil then
                 table.insert(keyset, key)
                 keysetMap[key] = k
+            elseif err ~= nil then
+                return nil, err
             end
         end
         if sort_keys then
@@ -139,7 +153,11 @@ function JsonEncoder:new(options)
         for i, sk in ipairs(keyset) do
             local k = keysetMap[sk]
             local v = tab[k]
-            buf = buf .. sk .. keySeparator .. encode(v)
+            local encoded, err = encode(v)
+            if not encoded then
+                return nil, err
+            end
+            buf = buf .. sk .. keySeparator .. encoded
             if i ~= #keyset then buf = buf .. separator end
         end
         if indent then
@@ -174,7 +192,7 @@ function JsonEncoder:new(options)
         if invalid_objects_as_type then
             return encodeFunctionMap["string"]('__lua_' .. type(o))
         end
-        error("Unexpected type '" .. _type .. "'")
+        return nil, "unexpected type '" .. _type .. "'"
     end
 
     local je = {_encode = encode}

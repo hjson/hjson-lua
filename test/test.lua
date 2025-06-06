@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2023 V (alis.is)
+-- MIT License - Copyright (c) 2025 V (alis.is)
 -- remove preloaded modules
 package.preload["hjson"] = nil
 package.loaded["hjson"] = nil
@@ -174,7 +174,7 @@ function readFile(file)
     return content
 end
 
-function getResultFile(testFile)
+function get_result_file(testFile)
     r = testFile:gsub("_test%..?json", "_result.json")
     for i, v in ipairs(results) do
         if v == r then
@@ -240,9 +240,9 @@ function equal(t1, t2)
     return result
 end
 
-decoder_failed = 0
-decoder_skipped = 0
-decoder_success = 0
+local decoder_failed = 0
+local decoder_skipped = 0
+local decoder_success = 0
 
 if #tests_override > 0 then
     tests = tests_override
@@ -250,27 +250,27 @@ end
 if test_decoder then
     print("Running decoder tests: ")
     for i, v in ipairs(tests) do
-        shouldfail = v:find("fail")
-        file = readFile(v)
-        status, decoded_test = pcall(decode, file)
-        if shouldfail and not status then
+        local shouldfail = v:find("fail")
+        local file = readFile(v)
+        local decoded_test, err = decode(file)
+        if shouldfail and not decoded_test then
             print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "OK")
             decoder_success = decoder_success + 1
         elseif shouldfail then
             print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "FAILED - should fail")
             decoder_failed = decoder_failed + 1
-        elseif not status then
-            print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "FAILED - decoder failed - " .. decoded_test)
+        elseif not decoded_test then
+            print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "FAILED - decoder failed - " .. tostring(err))
             decoder_failed = decoder_failed + 1
         else
-            rfile = getResultFile(v)
-            if not rfile then
+            local result_file = get_result_file(v)
+            if not result_file then
                 print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "SKIPPED - no result file")
                 decoder_skipped = decoder_skipped + 1
             else
-                file = readFile(rfile)
-                status, decoded_result = pcall(json.decode, file)
-                if not status then
+                file = readFile(result_file)
+                decoded_result, err = json.decode(file)
+                if not decoded_result then
                     print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "SKIPPED - failed to parse result file")
                     decoder_skipped = decoder_skipped + 1
                 elseif equal(decoded_test, decoded_result) then
@@ -289,49 +289,49 @@ if test_decoder then
     print("Total", #tests, "Success", decoder_success, "Skipped", decoder_skipped, "Failed", decoder_failed)
 end
 
-encoder_failed = 0
-encoder_skipped = 0
-encoder_success = 0
+local encoder_failed = 0
+local encoder_skipped = 0
+local encoder_success = 0
 
 if test_encoder then
     print("Running decoder tests: ")
     for i, v in ipairs(tests) do
-        shouldfail = v:find("fail")
-        file = readFile(v)
-        status, decoded_test = pcall(decode, file)
+        local should_fail = v:find("fail")
+        local file = readFile(v)
+        local decoded_test, err = decode(file)
 
-        if shouldfail and not status then
+        if should_fail and not decoded_test then
             print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "OK")
             encoder_success = encoder_success + 1
-        elseif shouldfail then
+        elseif should_fail then
             print(
                 tostring(i) .. "/" .. tostring(#tests) .. " - " .. v,
                 "SKIPPED - decode of the test file should fail and succeeded"
             )
             encoder_skipped = encoder_skipped + 1
-        elseif not status then
+        elseif not decoded_test then
             print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "SKIPPED - decode of the test file failed")
             encoder_skipped = encoder_skipped + 1
         else
-            status, encoded_test = pcall(encode, decoded_test)
-            if not status then
+            local encoded_test, err = encode(decoded_test)
+            if not encoded_test then
                 print(
                     tostring(i) .. "/" .. tostring(#tests) .. " - " .. v,
-                    "FAILED - encoder failed - " .. encoded_test
+                    "FAILED - encoder failed - " .. tostring(err)
                 )
                 encoder_failed = encoder_failed + 1
             else
-                rfile = getResultFile(v)
-                if not rfile then
+                local result_file = get_result_file(v)
+                if not result_file then
                     print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "SKIPPED - no result file")
                     encoder_skipped = encoder_skipped + 1
                 else
-                    status, decoded_test = pcall(json.decode, encoded_test)
-                    if not status then
+                    decoded_test, err = json.decode(encoded_test)
+                    if not decoded_test then
                     else
-                        file = readFile(rfile)
-                        status, decoded_result = pcall(json.decode, file)
-                        if not status then
+                        file = readFile(result_file)
+                        local decoded_result, _ = json.decode(file)
+                        if not decoded_result then
                             print(
                                 tostring(i) .. "/" .. tostring(#tests) .. " - " .. v,
                                 "SKIPPED - failed to parse result file"
@@ -355,18 +355,18 @@ if test_encoder then
     print("Total", #tests, "Success", encoder_success, "Skipped", encoder_skipped, "Failed", encoder_failed)
 end
 
-encoderH_failed = 0
-encoderH_skipped = 0
-encoderH_success = 0
+local encoderH_failed = 0
+local encoderH_skipped = 0
+local encoderH_success = 0
 
 if test_encoderH then
     print("Running decoder tests: ")
     for i, v in ipairs(tests) do
-        shouldfail = v:find("fail")
-        file = readFile(v)
-        status, decoded_test = pcall(decode, file)
+        local shouldfail = v:find("fail")
+        local file = readFile(v)
+        local decoded_test, err = decode(file)
 
-        if shouldfail and not status then
+        if shouldfail and not decoded_test then
             print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "OK")
             encoderH_success = encoderH_success + 1
         elseif shouldfail then
@@ -375,29 +375,29 @@ if test_encoderH then
                 "SKIPPED - decode of the test file should fail and succeeded"
             )
             encoderH_skipped = encoderH_skipped + 1
-        elseif not status then
+        elseif not decoded_test then
             print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "SKIPPED - decode of the test file failed")
             encoderH_skipped = encoderH_skipped + 1
         else
-            status, encoded_test = pcall(encodeH, decoded_test)
-            if not status then
+            local encoded_test, _ = encodeH(decoded_test)
+            if not encoded_test then
                 print(
                     tostring(i) .. "/" .. tostring(#tests) .. " - " .. v,
                     "FAILED - encoder failed - " .. encoded_test
                 )
                 encoderH_failed = encoderH_failed + 1
             else
-                rfile = getResultFile(v)
-                if not rfile then
+                local result_file = get_result_file(v)
+                if not result_file then
                     print(tostring(i) .. "/" .. tostring(#tests) .. " - " .. v, "SKIPPED - no result file")
                     encoderH_skipped = encoderH_skipped + 1
                 else
-                    status, decoded_test = pcall(decode, encoded_test)
-                    if not status then
+                    local decoded_test, _ = decode(encoded_test)
+                    if not decoded_test then
                     else
-                        file = readFile(rfile)
-                        status, decoded_result = pcall(json.decode, file)
-                        if not status then
+                        file = readFile(result_file)
+                        local decoded_result, _ = json.decode(file)
+                        if not decoded_result then
                             print(
                                 tostring(i) .. "/" .. tostring(#tests) .. " - " .. v,
                                 "SKIPPED - failed to parse result file"

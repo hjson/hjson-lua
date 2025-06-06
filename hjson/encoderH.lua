@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2023 V (alis.is)
+-- MIT License - Copyright (c) 2025 V (alis.is)
 local escape_char_map = {
     ["\\"] = "\\\\",
     ['"'] = '\\"',
@@ -69,7 +69,7 @@ local function startsWithKeyword(s)
                (containsSequences(s, startSequences))
 end
 
-local function isArray(t)
+local function is_array(t)
     local i = 0
     for _ in pairs(t) do
         i = i + 1
@@ -84,10 +84,11 @@ end
 
 local function encodeNil(val) return "null" end
 
+---@return string?, string?
 local function encodeNumber(val)
-    -- Check for NaN, -inf and inf
-    if val ~= val or val <= -math.huge or val >= math.huge then
-        error("unexpected number value '" .. tostring(val) .. "'")
+    -- -- Check for -inf and inf
+    if val <= -math.huge or val >= math.huge then
+        return nil, "unexpected number value '" .. tostring(val) .. "'"
     end
     return string.format("%.14g", val)
 end
@@ -96,11 +97,11 @@ local HjsonEncoder = {}
 
 function HjsonEncoder:new(options)
     if type(options) ~= "table" then options = {} end
-    local indent, skip_keys, sort_keys, item_sort_key, invalid_objects_as_type =
+    local indent, skip_invalid_keys, sort_keys, item_sort_key, invalid_objects_as_type =
         options.indent, options.skip_keys, options.sort_keys,
         options.item_sort_key, options.invalid_objects_as_type
 
-    if skip_keys == nil then skip_keys = true end
+    if skip_invalid_keys == nil then skip_invalid_keys = true end
     if indent == nil then indent = "    " end
     if (type(indent) ~= "number" or indent < 2) and
         (type(indent) ~= "string" or not indent:find("%s%s*")) then
@@ -112,9 +113,8 @@ function HjsonEncoder:new(options)
         indent = string.rep(" ", indent)
     end
 
-    if indent and not indent:match("%s*") then
-        error("Indent has to contain only whitespace characters or be a number")
-    end
+    assert(indent and indent:match("%s*"),
+           "indent (#1 parameter) has to be of type string with at least 2 spaces or integer greater than 1")
 
     local stack = {}
     local currentIndentLevel = 0
@@ -149,6 +149,8 @@ function HjsonEncoder:new(options)
         end
     end
 
+    ---@param key string|number|boolean|nil
+    ---@return string?, string?
     local function stringifyKey(key)
         local _type = type(key)
         if _type == "boolean" or _type == "number" then
@@ -165,13 +167,18 @@ function HjsonEncoder:new(options)
                 return key
             end
         end
-        if skip_keys then return nil end
-        error(string.format("Invalid key type - %s (%s) ", _type, key))
+        if skip_invalid_keys then return nil end
+        return nil, "invalid key type - " .. _type .. " (" .. tostring(key) .. ")"
     end
 
+    ---@param arr any[]
+    ---@param encode fun(v: any): string?, string?
+    ---@return string?, string?
     local function encodeArray(arr, encode)
         if not arr or #arr == 0 then return "[]" end
-        if stack[arr] then error("circular reference") end
+        if stack[arr] then
+            return nil, "circular reference"
+        end
         stack[arr] = true
 
         currentIndentLevel = currentIndentLevel + 1
@@ -180,7 +187,11 @@ function HjsonEncoder:new(options)
 
         local buf = "[" .. newlineIndent
         for i, v in ipairs(arr) do
-            buf = buf .. encode(v)
+            local encoded, err = encode(v)
+            if not encoded then
+                return nil, err
+            end
+            buf = buf .. encoded
             if i ~= #arr then buf = buf .. separator end
         end
         currentIndentLevel = currentIndentLevel - 1
@@ -189,9 +200,14 @@ function HjsonEncoder:new(options)
         return buf
     end
 
+    ---@param tab table
+    ---@param encode fun(v: any): string?, string?
+    ---@return string?, string?
     local function encodeTable(tab, encode)
         if not tab then return "{}" end
-        if stack[tab] then error("circular reference") end
+        if stack[tab] then 
+            return nil, "circular reference"
+        end
         stack[tab] = true
 
         currentIndentLevel = currentIndentLevel + 1
@@ -202,13 +218,14 @@ function HjsonEncoder:new(options)
         -- stringified key (sk) is key in keysetMap pointing to original non stringified key key
         local keysetMap = {}
         local keyset = {}
-        local n = 0
 
         for k in pairs(tab) do
-            local key = stringifyKey(k)
+            local key, err = stringifyKey(k)
             if key ~= nil then
                 table.insert(keyset, key)
                 keysetMap[key] = k
+            elseif err ~= nil then
+                return nil, err
             end
         end
         if sort_keys then
@@ -227,7 +244,11 @@ function HjsonEncoder:new(options)
             local v = tab[k]
 
             local key = sk
-            buf = buf .. key .. keySeparator .. encode(v)
+            local encoded, err = encode(v)
+            if not encoded then
+                return nil, err
+            end
+            buf = buf .. key .. keySeparator ..  encoded
             if i ~= #keyset then buf = buf .. separator end
         end
         currentIndentLevel = currentIndentLevel - 1
@@ -237,6 +258,7 @@ function HjsonEncoder:new(options)
         return buf
     end
 
+    ---@type table<string, fun(v: any):string?, string?>
     local encodeFunctionMap = {
         ["nil"] = encodeNil,
         ["table"] = encodeTable,
@@ -246,10 +268,12 @@ function HjsonEncoder:new(options)
         ["boolean"] = tostring
     }
 
+    ---@param o any
+    ---@return string?, string?
     local function _encode(o)
         local _type = type(o)
         if _type == "table" then
-            if isArray(o) then
+            if is_array(o) then
                 _type = "array"
             else
                 _type = "table"
@@ -260,7 +284,7 @@ function HjsonEncoder:new(options)
         if invalid_objects_as_type then
             return encodeFunctionMap["string"]('__lua_' .. type(o))
         end
-        error("Unexpected type '" .. _type .. "'")
+        return nil, "unexpected type '" .. _type .. "'"
     end
 
     local je = {_encode = _encode}

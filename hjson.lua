@@ -1,4 +1,4 @@
--- MIT License - Copyright (c) 2023 V (alis.is)
+-- MIT License - Copyright (c) 2025 V (alis.is)
 local decoder = require "hjson.decoder"
 local encoder = require "hjson.encoder"
 local encoderH = require "hjson.encoderH"
@@ -12,10 +12,11 @@ local encoderH = require "hjson.encoderH"
 ---decodes h/json
 ---@param str string
 ---@param options HjsonDecoderOptions
----@return any
+---@return any result
+---@return string? error
+---@return boolean success
 local function decode(str, options)
-    local _decoder = decoder:new(options)
-    return _decoder:decode(str)
+    return decoder:new(options):decode(str)
 end
 
 ---@class HJsonEncodeOptions
@@ -33,20 +34,6 @@ local function preprocess_encode_options(options)
         return result
     end
 
-    if options.skipKeys == true then
-        print("skipkeys is deprecated, use skip_keys instead")
-        options.skip_keys = true
-    end
-
-    if options.sortKeys == true then
-        print("sortKeys is deprecated, use sort_keys instead")
-        options.sort_keys = true
-    end
-
-    if options.invalidObjectsAsType == true then
-        print("invalidObjectsAsType is deprecated, use invalid_objects_as_type instead")
-        options.invalid_objects_as_type = true
-    end
     return options
 end
 
@@ -55,12 +42,12 @@ end
 ---encodes json
 ---@param obj any
 ---@param options HJsonEncodeOptions?
----@return any
+---@return string? result
+---@return string? error
 local function encode_json(obj, options)
     options = preprocess_encode_options(options)
 
-    local _encoder = encoder:new(options)
-    return _encoder:encode(obj)
+    return encoder:new(options):encode(obj)
 end
 
 ---#DES 'hjson.encode'
@@ -68,15 +55,16 @@ end
 ---encodes hjson
 ---@param obj any
 ---@param options HJsonEncodeOptions?
----@return any
+---@return string? result
+---@return string? error
 local function encode(obj, options)
     options = preprocess_encode_options(options) --[[@as HJsonEncodeOptions]]
 
     if options.indent == "" or options.indent == false or options.indent == 0 then
         return encode_json(obj, options)
     end
-    local _encoderH = encoderH:new(options)
-    return _encoderH:encode(obj)
+
+    return encoderH:new(options):encode(obj)
 end
 
 local hjson = {
@@ -86,7 +74,8 @@ local hjson = {
     ---encodes hjson
     ---@param obj any
     ---@param options HJsonEncodeOptions?
-    ---@return any
+    ---@return string? result
+    ---@return string? error
     stringify = encode,
     encode_to_json = encode_json,
     ---#DES 'hjson.stringify_to_json'
@@ -94,7 +83,8 @@ local hjson = {
     ---encodes json
     ---@param obj any
     ---@param options HJsonEncodeOptions?
-    ---@return any
+    ---@return string? result
+    ---@return string? error
     stringify_to_json = encode_json,
     decode = decode,
     ---#DES 'hjson.parse'
@@ -102,7 +92,9 @@ local hjson = {
     ---decodes h/json
     ---@param str string
     ---@param options HjsonDecoderOptions
-    ---@return any
+    ---@return any result
+    ---@return string? error
+    ---@return boolean success
     parse = decode,
 }
 
